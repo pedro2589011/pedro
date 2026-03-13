@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamVerse — Filmes, Séries, Animes & Doramas</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080a0f;
+    --surface: #0d1018;
+    --card: #111520;
+    --border: rgba(255,255,255,0.06);
+    --accent: #e63946;
+    --accent2: #f4a261;
+    --text: #f0f0f0;
+    --muted: #7a8099;
+    --glow: rgba(230, 57, 70, 0.35);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-weight: 400;
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* NOISE TEXTURE */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 4rem;
+    height: 68px;
+    background: linear-gradient(to bottom, rgba(8,10,15,0.98), transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a {
+    color: var(--muted); text-decoration: none; font-size: 0.9rem;
+    font-weight: 500; letter-spacing: 0.05em; transition: color 0.2s;
+  }
+  .nav-links a:hover, .nav-links a.active { color: var(--text); }
+  .nav-links a.active { position: relative; }
+  .nav-links a.active::after {
+    content: ''; position: absolute; bottom: -4px; left: 0; right: 0;
+    height: 2px; background: var(--accent); border-radius: 2px;
+  }
+  .nav-right { display: flex; gap: 1rem; align-items: center; }
+  .btn-search {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 1.1rem; padding: 6px; transition: color 0.2s;
+  }
+  .btn-search:hover { color: var(--text); }
+  .btn-login {
+    background: var(--accent); color: #fff; border: none;
+    padding: 8px 22px; border-radius: 6px; font-family: 'Outfit', sans-serif;
+    font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    letter-spacing: 0.05em; transition: opacity 0.2s, transform 0.2s;
+  }
+  .btn-login:hover { opacity: 0.85; transform: translateY(-1px); }
+
+  /* HERO */
+  .hero {
+    position: relative; height: 100vh; min-height: 650px;
+    display: flex; align-items: flex-end; padding-bottom: 8rem;
+    overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(to right, rgba(8,10,15,0.97) 35%, rgba(8,10,15,0.4) 70%, transparent),
+      linear-gradient(to top, rgba(8,10,15,1) 0%, transparent 60%);
+    z-index: 2;
+  }
+  .hero-img {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, #1a0a2e 0%, #0d1a3a 40%, #1a2a1a 100%);
+    z-index: 1;
+  }
+  /* Fake cinematic poster shapes */
+  .hero-img::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 80% at 70% 40%, rgba(100,60,160,0.3), transparent),
+      radial-gradient(ellipse 40% 60% at 80% 60%, rgba(230,57,70,0.15), transparent),
+      radial-gradient(ellipse 50% 70% at 60% 30%, rgba(40,80,160,0.25), transparent);
+  }
+  .hero-img::after {
+    content: 'FEATURED';
+    position: absolute; top: 50%; left: 65%; transform: translate(-50%,-50%);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18rem; letter-spacing: -0.05em;
+    color: rgba(255,255,255,0.04);
+    white-space: nowrap;
+  }
+  .hero-content { position: relative; z-index: 3; padding: 0 4rem; max-width: 620px; }
+  .hero-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff; font-size: 0.7rem; font-weight: 700;
+    letter-spacing: 0.15em; padding: 4px 12px; border-radius: 4px;
+    margin-bottom: 1.2rem; text-transform: uppercase;
+  }
+  .hero-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3.5rem, 7vw, 6rem);
+    line-height: 0.95; letter-spacing: 0.02em;
+    margin-bottom: 1.2rem;
+  }
+  .hero-meta {
+    display: flex; gap: 1.2rem; align-items: center;
+    margin-bottom: 1rem; color: var(--muted); font-size: 0.85rem;
+  }
+  .hero-meta span { display: flex; align-items: center; gap: 0.3rem; }
+  .star { color: var(--accent2); }
+  .hero-desc { color: rgba(240,240,240,0.65); line-height: 1.65; margin-bottom: 2rem; font-size: 0.95rem; }
+  .hero-actions { display: flex; gap: 1rem; }
+  .btn-play {
+    display: flex; align-items: center; gap: 0.6rem;
+    background: var(--accent); color: #fff;
+    border: none; padding: 14px 28px; border-radius: 8px;
+    font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 700;
+    cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 0 30px var(--glow);
+  }
+  .btn-play:hover { transform: translateY(-2px); box-shadow: 0 0 50px var(--glow); }
+  .btn-info {
+    display: flex; align-items: center; gap: 0.6rem;
+    background: rgba(255,255,255,0.1); color: var(--text);
+    border: 1px solid var(--border); padding: 14px 28px; border-radius: 8px;
+    font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 600;
+    cursor: pointer; transition: background 0.2s;
+    backdrop-filter: blur(10px);
+  }
+  .btn-info:hover { background: rgba(255,255,255,0.15); }
+  .play-icon { width: 0; height: 0; border-style: solid; border-width: 6px 0 6px 11px; border-color: transparent transparent transparent #fff; }
+
+  /* SEARCH BAR */
+  .search-section {
+    padding: 2rem 4rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .search-wrapper {
+    max-width: 800px; margin: 0 auto;
+    display: flex; gap: 1rem;
+  }
+  .search-input-wrap {
+    flex: 1; position: relative;
+  }
+  .search-input-wrap svg {
+    position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
+    color: var(--muted); pointer-events: none;
+  }
+  .search-input {
+    width: 100%; background: var(--card); border: 1px solid var(--border);
+    color: var(--text); font-family: 'Outfit', sans-serif; font-size: 0.95rem;
+    padding: 13px 1rem 13px 2.8rem; border-radius: 8px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .search-input::placeholder { color: var(--muted); }
+  .search-input:focus { border-color: var(--accent); }
+  .search-btn {
+    background: var(--accent); color: #fff; border: none;
+    padding: 0 24px; border-radius: 8px; font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem; font-weight: 600; cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .search-btn:hover { opacity: 0.85; }
+
+  /* CATEGORIES */
+  .categories {
+    padding: 0 4rem; margin: 3rem 0 0;
+    display: flex; gap: 0.6rem; flex-wrap: wrap;
+  }
+  .cat-btn {
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--muted); font-family: 'Outfit', sans-serif;
+    font-size: 0.8rem; font-weight: 500; letter-spacing: 0.08em;
+    padding: 7px 18px; border-radius: 50px; cursor: pointer;
+    transition: all 0.2s; text-transform: uppercase;
+  }
+  .cat-btn:hover, .cat-btn.active {
+    background: var(--accent); border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* SECTION */
+  section { padding: 2.5rem 4rem; }
+  .section-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem; letter-spacing: 0.08em;
+  }
+  .section-title span { color: var(--accent); }
+  .see-all {
+    color: var(--muted); font-size: 0.8rem; text-decoration: none;
+    font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+    border-bottom: 1px solid var(--border); padding-bottom: 2px;
+    transition: color 0.2s;
+  }
+  .see-all:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* GRID */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1.2rem;
+  }
+  .grid.wide { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+
+  /* CARD */
+  .card {
+    border-radius: 10px; overflow: hidden;
+    background: var(--card); border: 1px solid var(--border);
+    transition: transform 0.25s, box-shadow 0.25s;
+    cursor: pointer; position: relative;
+  }
+  .card:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+  .card-poster {
+    width: 100%; aspect-ratio: 2/3;
+    position: relative; overflow: hidden;
+  }
+  .card-poster-img {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 3rem;
+    letter-spacing: 0.05em; position: relative; overflow: hidden;
+  }
+  .card-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%);
+    opacity: 0; transition: opacity 0.25s;
+    display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+  }
+  .card:hover .card-overlay { opacity: 1; }
+  .overlay-btn {
+    background: var(--accent); border: none; color: #fff;
+    width: 38px; height: 38px; border-radius: 50%; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; transition: transform 0.2s;
+  }
+  .overlay-btn:hover { transform: scale(1.1); }
+  .overlay-btn.dl { background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); }
+  .card-badge {
+    position: absolute; top: 8px; left: 8px;
+    background: var(--accent); color: #fff;
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em;
+    padding: 3px 8px; border-radius: 4px; text-transform: uppercase;
+  }
+  .card-badge.new { background: #2ecc71; }
+  .card-badge.hd { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); }
+  .card-body { padding: 0.75rem 0.85rem; }
+  .card-title {
+    font-size: 0.88rem; font-weight: 600;
+    margin-bottom: 0.3rem; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .card-sub { font-size: 0.75rem; color: var(--muted); display: flex; justify-content: space-between; }
+  .rating { color: var(--accent2); font-weight: 600; }
+
+  /* POSTER BG COLORS */
+  .p1 { background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); }
+  .p2 { background: linear-gradient(135deg, #2d1b69, #11052c, #200122); }
+  .p3 { background: linear-gradient(135deg, #0a3d0a, #1a5276, #0d2137); }
+  .p4 { background: linear-gradient(135deg, #4a0000, #800000, #2d0000); }
+  .p5 { background: linear-gradient(135deg, #1a0a2e, #6a0572, #260a2e); }
+  .p6 { background: linear-gradient(135deg, #001e3c, #0a3d62, #1b4f72); }
+  .p7 { background: linear-gradient(135deg, #2e1800, #6e2400, #3e1f00); }
+  .p8 { background: linear-gradient(135deg, #003333, #006060, #001a1a); }
+  .p9 { background: linear-gradient(135deg, #1c0a4a, #3d1a8c, #12084a); }
+  .p10 { background: linear-gradient(135deg, #0a2e0a, #1a5c1a, #0a1e0a); }
+  .p11 { background: linear-gradient(135deg, #2e0a1a, #6e1a3a, #1a050e); }
+  .p12 { background: linear-gradient(135deg, #0f1626, #1e3a5f, #0a1220); }
+
+  /* BANNER HIGHLIGHTS */
+  .highlights { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin-bottom: 0; }
+  .hl-card {
+    border-radius: 12px; overflow: hidden; position: relative;
+    aspect-ratio: 16/7; cursor: pointer;
+    border: 1px solid var(--border); transition: transform 0.25s;
+  }
+  .hl-card:hover { transform: scale(1.02); }
+  .hl-bg { position: absolute; inset: 0; }
+  .hl-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 30%, transparent);
+  }
+  .hl-content {
+    position: absolute; bottom: 0; left: 0; padding: 1.2rem;
+  }
+  .hl-tag {
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--accent2); margin-bottom: 0.4rem;
+  }
+  .hl-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem; letter-spacing: 0.05em; line-height: 1;
+  }
+  .hl-ep { font-size: 0.75rem; color: var(--muted); margin-top: 0.3rem; }
+
+  /* FOOTER */
+  footer {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 3rem 4rem 2rem;
+    margin-top: 2rem;
+  }
+  .footer-top {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 3rem; margin-bottom: 2rem;
+  }
+  .footer-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem; letter-spacing: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 0.8rem;
+  }
+  .footer-desc { color: var(--muted); font-size: 0.85rem; line-height: 1.6; }
+  .footer-col h4 {
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 1rem;
+  }
+  .footer-col ul { list-style: none; }
+  .footer-col ul li { margin-bottom: 0.6rem; }
+  .footer-col ul li a {
+    color: rgba(240,240,240,0.6); text-decoration: none; font-size: 0.85rem;
+    transition: color 0.2s;
+  }
+  .footer-col ul li a:hover { color: var(--text); }
+  .footer-bottom {
+    border-top: 1px solid var(--border); padding-top: 1.5rem;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .footer-bottom p { color: var(--muted); font-size: 0.8rem; }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; max-width: 700px; width: 90%; overflow: hidden;
+    position: relative; animation: modalIn 0.3s ease;
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.95) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .modal-video {
+    width: 100%; aspect-ratio: 16/9;
+    background: #000;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 5rem; color: rgba(255,255,255,0.1);
+    position: relative; overflow: hidden;
+  }
+  .modal-video-bg { position: absolute; inset: 0; }
+  .play-big {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: var(--accent); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; z-index: 2;
+    box-shadow: 0 0 40px var(--glow);
+    transition: transform 0.2s;
+  }
+  .play-big:hover { transform: scale(1.1); }
+  .play-big-icon { width: 0; height: 0; border-style: solid; border-width: 10px 0 10px 18px; border-color: transparent transparent transparent #fff; margin-left: 3px; }
+  .modal-body { padding: 1.5rem; }
+  .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+  .modal-meta { display: flex; gap: 1rem; color: var(--muted); font-size: 0.85rem; margin-bottom: 1rem; }
+  .modal-desc { color: rgba(240,240,240,0.7); font-size: 0.9rem; line-height: 1.65; margin-bottom: 1.2rem; }
+  .modal-actions { display: flex; gap: 0.8rem; }
+  .modal-close {
+    position: absolute; top: 12px; right: 12px;
+    background: rgba(0,0,0,0.6); border: none; color: var(--text);
+    width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+    font-size: 1.1rem; display: flex; align-items: center; justify-content: center;
+    z-index: 10;
+  }
+  .tag { background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: var(--muted); padding: 3px 10px; border-radius: 50px; font-size: 0.75rem; }
+  .tag.g { color: #2ecc71; border-color: rgba(46,204,113,0.3); background: rgba(46,204,113,0.08); }
+
+  /* DOWNLOAD MODAL */
+  .dl-options { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+  .dl-option {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.8rem 1rem;
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; transition: background 0.2s, border-color 0.2s;
+  }
+  .dl-option:hover { background: rgba(230,57,70,0.1); border-color: var(--accent); }
+  .dl-quality { font-weight: 700; font-size: 0.9rem; }
+  .dl-size { color: var(--muted); font-size: 0.75rem; }
+  .dl-icon { color: var(--accent); font-size: 1.1rem; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    nav { padding: 0 1.5rem; }
+    .nav-links { display: none; }
+    section { padding: 2rem 1.5rem; }
+    .categories { padding: 0 1.5rem; }
+    .hero-content { padding: 0 1.5rem; }
+    .highlights { grid-template-columns: 1fr; }
+    .footer-top { grid-template-columns: 1fr 1fr; }
+    .search-section { padding: 1.5rem; }
+  }
+
+  /* TABS */
+  .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+  .tab-btn {
+    background: none; border: none; color: var(--muted);
+    font-family: 'Outfit', sans-serif; font-size: 0.9rem; font-weight: 500;
+    padding: 0.6rem 1.2rem; cursor: pointer; position: relative;
+    transition: color 0.2s;
+  }
+  .tab-btn.active { color: var(--text); }
+  .tab-btn.active::after {
+    content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+    height: 2px; background: var(--accent);
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* SCROLL HINT */
+  .scroll-grid {
+    display: flex; gap: 1.2rem; overflow-x: auto; padding-bottom: 0.5rem;
+    scrollbar-width: none;
+  }
+  .scroll-grid::-webkit-scrollbar { display: none; }
+  .scroll-grid .card { flex: 0 0 160px; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">StreamVerse</div>
+  <ul class="nav-links">
+    <li><a href="#" class="active">Início</a></li>
+    <li><a href="#filmes">Filmes</a></li>
+    <li><a href="#series">Séries</a></li>
+    <li><a href="#animes">Animes</a></li>
+    <li><a href="#doramas">Doramas</a></li>
+    <li><a href="#minha-lista">Minha Lista</a></li>
+  </ul>
+  <div class="nav-right">
+    <button class="btn-search" onclick="document.querySelector('.search-section').scrollIntoView({behavior:'smooth'})">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    </button>
+    <button class="btn-login">Entrar</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-img"></div>
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <span class="hero-badge">🔥 Em Alta</span>
+    <h1 class="hero-title">O Labirinto<br>das Sombras</h1>
+    <div class="hero-meta">
+      <span class="star">★</span> <strong>9.1</strong>
+      <span>2024</span>
+      <span>2h 18min</span>
+      <span>+16</span>
+      <span class="tag">Ação</span>
+      <span class="tag">Ficção</span>
+    </div>
+    <p class="hero-desc">Em um mundo onde a realidade e o virtual se fundem, um detetive enfrenta a conspiração que pode mudar o futuro da humanidade. Uma jornada épica de sobrevivência, traição e redenção.</p>
+    <div class="hero-actions">
+      <button class="btn-play" onclick="openModal('O Labirinto das Sombras','2024 · 2h 18min · Ação, Ficção Científica','Um detetive descobre que a linha entre o mundo real e o virtual está desaparecendo. Com o tempo se esgotando, ele deve desvendar uma conspiração global antes que seja tarde demais.','p1')">
+        <span class="play-icon"></span> Assistir Agora
+      </button>
+      <button class="btn-info" onclick="openModal('O Labirinto das Sombras','2024 · 2h 18min · Ação, Ficção Científica','Um detetive descobre que a linha entre o mundo real e o virtual está desaparecendo. Com o tempo se esgotando, ele deve desvendar uma conspiração global antes que seja tarde demais.','p1')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        Mais Detalhes
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- SEARCH -->
+<div class="search-section">
+  <div class="search-wrapper">
+    <div class="search-input-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="search-input" type="text" placeholder="Buscar filmes, séries, animes, doramas...">
+    </div>
+    <button class="search-btn">Buscar</button>
+  </div>
+</div>
+
+<!-- CATEGORIES -->
+<div class="categories">
+  <button class="cat-btn active" onclick="filterCat(this,'todos')">Todos</button>
+  <button class="cat-btn" onclick="filterCat(this,'acao')">Ação</button>
+  <button class="cat-btn" onclick="filterCat(this,'comedia')">Comédia</button>
+  <button class="cat-btn" onclick="filterCat(this,'drama')">Drama</button>
+  <button class="cat-btn" onclick="filterCat(this,'terror')">Terror</button>
+  <button class="cat-btn" onclick="filterCat(this,'romance')">Romance</button>
+  <button class="cat-btn" onclick="filterCat(this,'sci-fi')">Ficção Científica</button>
+  <button class="cat-btn" onclick="filterCat(this,'fantasia')">Fantasia</button>
+  <button class="cat-btn" onclick="filterCat(this,'thriller')">Thriller</button>
+  <button class="cat-btn" onclick="filterCat(this,'documentario')">Documentário</button>
+</div>
+
+<!-- DESTAQUES -->
+<section>
+  <div class="section-header">
+    <h2 class="section-title">Destaques da <span>Semana</span></h2>
+    <a href="#" class="see-all">Ver Todos →</a>
+  </div>
+  <div class="highlights">
+    <div class="hl-card" onclick="openModal('Dragon Odyssey','Anime · 24 Eps · Ação, Fantasia','Kai embarca em uma jornada épica para encontrar os sete dragões ancestrais antes que as trevas consumam o mundo. Uma aventura inesquecível cheia de batalhas épicas e revelações surpreendentes.','p9')">
+      <div class="hl-bg" style="background: linear-gradient(135deg,#1c0a4a,#6a0572,#12084a)"></div>
+      <div class="hl-overlay"></div>
+      <div class="hl-content">
+        <div class="hl-tag">🎌 Anime</div>
+        <div class="hl-title">Dragon Odyssey</div>
+        <div class="hl-ep">Temporada 3 · Ep. 24 disponível</div>
+      </div>
+    </div>
+    <div class="hl-card" onclick="openModal('Primeiro Amor','Dorama · 16 Eps · Romance, Drama','Duas almas se encontram por acaso em Seul e descobrem que o destino os uniu desde a infância. Uma história de amor que atravessa o tempo e as circunstâncias mais difíceis da vida.','p3')">
+      <div class="hl-bg" style="background: linear-gradient(135deg,#0a2e1a,#1a5c3a,#0a1e0a)"></div>
+      <div class="hl-overlay"></div>
+      <div class="hl-content">
+        <div class="hl-tag">🇰🇷 Dorama</div>
+        <div class="hl-title">Primeiro Amor</div>
+        <div class="hl-ep">16 Episódios · Completo</div>
+      </div>
+    </div>
+    <div class="hl-card" onclick="openModal('Código Zero','Série · 8 Eps · Thriller, Suspense','Uma agente de segurança cibernética descobre que a maior ameaça ao mundo está escondida dentro da própria organização que deveria protegê-la. Ninguém é confiável neste thriller de tirar o fôlego.','p4')">
+      <div class="hl-bg" style="background: linear-gradient(135deg,#2e0a00,#6e2400,#1e0a00)"></div>
+      <div class="hl-overlay"></div>
+      <div class="hl-content">
+        <div class="hl-tag">📺 Série</div>
+        <div class="hl-title">Código Zero</div>
+        <div class="hl-ep">8 Episódios · Temporada 2 em breve</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FILMES -->
+<section id="filmes">
+  <div class="section-header">
+    <h2 class="section-title">Filmes em <span>Alta</span></h2>
+    <a href="#" class="see-all">Ver Todos →</a>
+  </div>
+  <div class="grid">
+    <div class="card" onclick="openModal('Horizonte Perdido','2024 · 2h 05min · Aventura, Drama','Um piloto que sobrevive a um acidente misterioso descobre uma civilização escondida nas montanhas do Himalaia. Uma história épica sobre escolhas, sacrifício e o que realmente importa na vida.','p1')">
+      <div class="card-poster"><div class="card-poster-img p1">HP</div><span class="card-badge new">Novo</span><span class="card-badge hd" style="left:auto;right:8px">4K</span><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('Horizonte Perdido')">⬇</button></div></div>
+      <div class="card-body"><div class="card-title">Horizonte Perdido</div><div class="card-sub"><span>2024</span><span class="rating">★ 8.7</span></div></div>
+    </div>
+    <div class="card" onclick="openModal('Sombra & Luz','2023 · 1h 52min · Thriller','Uma fotógrafa descobre que as sombras em suas fotos revelam segredos sombrios do passado de uma pequena cidade litorânea. Um thriller visualmente deslumbrante sobre verdade e obsessão.','p2')">
+      <div class="card-poster"><div class="card-poster-img p2">SL</div><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('Sombra & Luz')">⬇</button></div></div>
+      <div class="card-body"><div class="card-title">Sombra & Luz</div><div class="card-sub"><span>2023</span><span class="rating">★ 8.4</span></div></div>
+    </div>
+    <div class="card" onclick="openModal('Terra Nova','2024 · 2h 22min · Sci-Fi','Colonos em Marte descobrem que não estão sozinhos no planeta vermelho. Uma descoberta que mudará para sempre a relação da humanidade com o universo e com ela mesma.','p3')">
+      <div class="card-poster"><div class="card-poster-img p3">TN</div><span class="card-badge">Trending</span><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('Terra Nova')">⬇</button></div></div>
+      <div class="card-body"><div class="card-title">Terra Nova</div><div class="card-sub"><span>2024</span><span class="rating">★ 9.0</span></div></div>
+    </div>
+    <div class="card" onclick="openModal('Chamas do Norte','2023 · 1h 48min · Ação','Um ex-soldado retorna à sua cidade natal para descobrir que ela foi tomada por uma organização criminosa poderosa. A batalha para recuperar o que é seu começa agora.','p4')">
+      <div class="card-poster"><div class="card-poster-img p4">CN</div><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('Chamas do Norte')">⬇</button></div></div>
+      <div class="card-body"><div class="card-title">Chamas do Norte</div><div class="card-sub"><span>2023</span><span class="rating">★ 8.1</span></div></div>
+    </div>
+    <div class="card" onclick="openModal('Ecos do Infinito','2024 · 2h 10min · Fantasia','Uma jovem arquiteta descobre que pode ver ecos do passado nas estruturas que projeta. Seu dom a leva para uma missão além do tempo para salvar um segredo ancestral.','p5')">
+      <div class="card-poster"><div class="card-poster-img p5">EI</div><span class="card-badge new">Novo</span><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('Ecos do Infinito')">⬇</button></div></div>
+      <div class="card-body"><div class="card-title">Ecos do Infinito</div><div class="card-sub"><span>2024</span><span class="rating">★ 8.9</span></div></div>
+    </div>
+    <div class="card" onclick="openModal('Último Horizonte','2023 · 1h 55min · Drama','A história real de um pequeno vilarejo de pescadores que enfrenta a modernidade, a saudade e a inevitabilidade da mudança com coragem e poesia.','p6')">
+      <div class="card-poster"><div class="card-poster-img p6">UH</div><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('Último Horizonte')">⬇</button></div></div>
+      <div class="card-body"><div class="card-title">Último Horizonte</div><div class="card-sub"><span>2023</span><span class="rating">★ 8.6</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- SÉRIES & ANIMES & DORAMAS TABS -->
+<section id="series">
+  <div class="section-header">
+    <h2 class="section-title">Séries, Animes <span>&</span> Doramas</h2>
+    <a href="#" class="see-all">Ver Todos →</a>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(this,'tab-series')">📺 Séries</button>
+    <button class="tab-btn" onclick="switchTab(this,'tab-animes')">🎌 Animes</button>
+    <button class="tab-btn" onclick="switchTab(this,'tab-doramas')">🇰🇷 Doramas</button>
+  </div>
+
+  <!-- SÉRIES -->
+  <div id="tab-series" class="tab-content active">
+    <div class="scroll-grid">
+      <div class="card" onclick="openModal('Código Zero','Série · 8 Eps · Thriller','Uma agente cibernética descobre que a maior ameaça está dentro de sua própria organização.','p4')">
+        <div class="card-poster"><div class="card-poster-img p4">CZ</div><span class="card-badge">T1 Completa</span><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('Código Zero')">⬇</button></div></div>
+        <div class="card-body"><div class="card-title">Código Zero</div><div class="card-sub"><span>8 Eps</span><span class="rating">★ 9.2</span></div></div>
+      </div>
+      <div class="card" onclick="openModal('O Despertar','Série · 10 Eps · Drama, Mistério','Após um coma de 10 anos, uma mulher acorda e descobre que o mundo mudou completamente — e ela também.','p2')">
+        <div class="card-poster"><div class="card-poster-img p2">OD</div><span class="card-badge new">Novo</span><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('O Despertar')">⬇</button></div></div>
+        <div class="card-body"><div class="card-title">O Despertar</div><div class="card-sub"><span>10 Eps</span><span class="rating">★ 8.8</span></div></div>
+      </div>
+      <div class="card" onclick="openModal('Fractured','Série · 6 Eps · Sci-Fi, Suspense','Em um futuro próximo, a memória humana pode ser editada. Uma investigadora descobre algo que não pode ser apagado.','p12')">
+        <div class="card-poster"><div class="card-poster-img p12">FR</div><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('Fractured')">⬇</button></div></div>
+        <div class="card-body"><div class="card-title">Fractured</div><div class="card-sub"><span>6 Eps</span><span class="rating">★ 9.0</span></div></div>
+      </div>
+      <div class="card" onclick="openModal('Raízes','Série · 12 Eps · Drama','Uma família descobri segredos enterrados por três gerações quando o patriarca desaparece misteriosamente.','p8')">
+        <div class="card-poster"><div class="card-poster-img p8">RA</div><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('Raízes')">⬇</button></div></div>
+        <div class="card-body"><div class="card-title">Raízes</div><div class="card-sub"><span>12 Eps</span><span class="rating">★ 8.5</span></div></div>
+      </div>
+      <div class="card" onclick="openModal('Neon District','Série · 8 Eps · Noir, Crime','Na cidade que nunca dorme, uma detetive corrupta tenta se redimir enquanto investiga o crime do século.','p7')">
+        <div class="card-poster"><div class="card-poster-img p7">ND</div><span class="card-badge new">T2</span><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('Neon District')">⬇</button></div></div>
+        <div class="card-body"><div class="card-title">Neon District</div><div class="card-sub"><span>8 Eps</span><span class="rating">★ 8.9</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANIMES -->
+  <div id="tab-animes" class="tab-content">
+    <div class="scroll-grid">
+      <div class="card" onclick="openModal('Dragon Odyssey','Anime · 48 Eps · Ação, Fantasia','Kai embarca em uma jornada épica para encontrar os sete dragões ancestrais antes que as trevas consumam o mundo.','p9')">
+        <div class="card-poster"><div class="card-poster-img p9">DO</div><span class="card-badge">Ep. 48</span><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('Dragon Odyssey')">⬇</button></div></div>
+        <div class="card-body"><div class="card-title">Dragon Odyssey</div><div class="card-sub"><span>48 Eps</span><span class="rating">★ 9.4</span></div></div>
+      </div>
+      <div class="card" onclick="openModal('Shinobi no Kokoro','Anime · 24 Eps · Samurai, Drama','Um jovem ninja com poderes inexplicáveis enfrenta seu destino em um Japão feudal à beira do caos.','p4')">
+        <div class="card-poster"><div class="card-poster-img p4">SK</div><span class="card-badge new">Novo</span><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('Shinobi no Kokoro')">⬇</button></div></div>
+        <div class="card-body"><div class="card-title">Shinobi no Kokoro</div><div class="card-sub"><span>24 Eps</span><span class="rating">★ 9.1</span></div></div>
+      </div>
+      <div class="card" onclick="openModal('Stellar Witch','Anime · 12 Eps · Mahou, Slice of Life','Uma garota comum descobre que é a última de uma linhagem de bruxas estelares e deve proteger a Terra.','p5')">
+        <div class="card-poster"><div class="card-poster-img p5">SW</div><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('Stellar Witch')">⬇</button></div></div>
+        <div class="card-body"><div class="card-title">Stellar Witch</div><div class="card-sub"><span>12 Eps</span><span class="rating">★ 8.7</span></div></div>
+      </div>
+      <div class="card" onclick="openModal('Kaze no Senshi','Anime · 36 Eps · Mecha, Sci-Fi','Em 2085, pilotos de mechas batalham para controlar os últimos recursos do planeta Terra devastado.','p6')">
+        <div class="card-poster"><div class="card-poster-img p6">KS</div><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('Kaze no Senshi')">⬇</button></div></div>
+        <div class="card-body"><div class="card-title">Kaze no Senshi</div><div class="card-sub"><span>36 Eps</span><span class="rating">★ 8.9</span></div></div>
+      </div>
+      <div class="card" onclick="openModal('Yume Academy','Anime · 13 Eps · Comédia, Romance','A vida caótica de estudantes em uma escola de artes mágicas onde os sonhos se tornam realidade — às vezes literalmente.','p10')">
+        <div class="card-poster"><div class="card-poster-img p10">YA</div><span class="card-badge new">Novo</span><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('Yume Academy')">⬇</button></div></div>
+        <div class="card-body"><div class="card-title">Yume Academy</div><div class="card-sub"><span>13 Eps</span><span class="rating">★ 8.6</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DORAMAS -->
+  <div id="tab-doramas" class="tab-content">
+    <div class="scroll-grid">
+      <div class="card" onclick="openModal('Primeiro Amor','Dorama · 16 Eps · Romance','Duas almas se encontram por acaso em Seul e descobrem que o destino os uniu desde a infância.','p3')">
+        <div class="card-poster"><div class="card-poster-img p3">PA</div><span class="card-badge">Completo</span><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('Primeiro Amor')">⬇</button></div></div>
+        <div class="card-body"><div class="card-title">Primeiro Amor</div><div class="card-sub"><span>16 Eps</span><span class="rating">★ 9.3</span></div></div>
+      </div>
+      <div class="card" onclick="openModal('Destino em Dobro','Dorama · 20 Eps · Romance, Comédia','Dois rivais de negócios descobrem que moram no mesmo apartamento por um erro de contrato — e precisam aprender a conviver.','p11')">
+        <div class="card-poster"><div class="card-poster-img p11">DD</div><span class="card-badge new">Novo</span><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('Destino em Dobro')">⬇</button></div></div>
+        <div class="card-body"><div class="card-title">Destino em Dobro</div><div class="card-sub"><span>20 Eps</span><span class="rating">★ 9.0</span></div></div>
+      </div>
+      <div class="card" onclick="openModal('Segredos de Joseon','Dorama · 24 Eps · Histórico, Ação','Na era Joseon, uma guerreira disfarçada de homem protege o reino de conspirações palacianas. Poder, honra e amor num dorama épico.','p7')">
+        <div class="card-poster"><div class="card-poster-img p7">SJ</div><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('Segredos de Joseon')">⬇</button></div></div>
+        <div class="card-body"><div class="card-title">Segredos de Joseon</div><div class="card-sub"><span>24 Eps</span><span class="rating">★ 9.1</span></div></div>
+      </div>
+      <div class="card" onclick="openModal('Hospital das Almas','Dorama · 18 Eps · Drama, Fantasia','Um médico que pode ver fantasmas trabalha em um hospital assombrado por pacientes do passado que buscam paz.','p9')">
+        <div class="card-poster"><div class="card-poster-img p9">HA</div><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('Hospital das Almas')">⬇</button></div></div>
+        <div class="card-body"><div class="card-title">Hospital das Almas</div><div class="card-sub"><span>18 Eps</span><span class="rating">★ 8.8</span></div></div>
+      </div>
+      <div class="card" onclick="openModal('Seul às Meia-Noite','Dorama · 12 Eps · Romance, Mistério','Cada noite, uma mulher revive o mesmo dia — até encontrar o homem que pode quebrar a maldição do tempo.','p12')">
+        <div class="card-poster"><div class="card-poster-img p12">SM</div><span class="card-badge new">Novo</span><div class="card-overlay"><button class="overlay-btn">▶</button><button class="overlay-btn dl" onclick="event.stopPropagation();openDownload('Seul às Meia-Noite')">⬇</button></div></div>
+        <div class="card-body"><div class="card-title">Seul às Meia-Noite</div><div class="card-sub"><span>12 Eps</span><span class="rating">★ 9.2</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div>
+      <div class="footer-logo">StreamVerse</div>
+      <p class="footer-desc">Seu destino para filmes, séries, animes e doramas. A melhor experiência de entretenimento digital, com qualidade 4K e download para assistir offline.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Conteúdo</h4>
+      <ul>
+        <li><a href="#">Filmes</a></li>
+        <li><a href="#">Séries</a></li>
+        <li><a href="#">Animes</a></li>
+        <li><a href="#">Doramas</a></li>
+        <li><a href="#">Documentários</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Suporte</h4>
+      <ul>
+        <li><a href="#">Central de Ajuda</a></li>
+        <li><a href="#">Como Baixar</a></li>
+        <li><a href="#">Qualidade de Vídeo</a></li>
+        <li><a href="#">Dispositivos</a></li>
+        <li><a href="#">Contato</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <ul>
+        <li><a href="#">Privacidade</a></li>
+        <li><a href="#">Termos de Uso</a></li>
+        <li><a href="#">Cookies</a></li>
+        <li><a href="#">DMCA</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2024 StreamVerse. Todos os direitos reservados.</p>
+    <p style="color:var(--muted);font-size:0.8rem">🎬 Qualidade 4K · 🎧 Áudio 5.1 · ⬇ Download Offline</p>
+  </div>
+</footer>
+
+<!-- MODAL: PLAYER -->
+<div class="modal-overlay" id="mainModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-video" id="modalVideo">
+      <div class="modal-video-bg" id="modalVideoBg"></div>
+      <button class="play-big"><span class="play-big-icon"></span></button>
+    </div>
+    <div class="modal-body">
+      <h2 class="modal-title" id="modalTitle">—</h2>
+      <div class="modal-meta" id="modalMeta">—</div>
+      <p class="modal-desc" id="modalDesc">—</p>
+      <div class="modal-actions">
+        <button class="btn-play" style="font-size:0.85rem;padding:10px 20px">▶ Assistir</button>
+        <button class="btn-info" style="font-size:0.85rem;padding:10px 20px" onclick="closeModal();openDownload(currentTitle)">⬇ Baixar</button>
+        <button class="btn-info" style="font-size:0.85rem;padding:10px 20px">+ Minha Lista</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DOWNLOAD -->
+<div class="modal-overlay" id="dlModal" onclick="if(event.target===this)closeDl()">
+  <div class="modal" style="max-width:480px">
+    <button class="modal-close" onclick="closeDl()">✕</button>
+    <div class="modal-body" style="padding:2rem">
+      <h2 class="modal-title" style="margin-bottom:0.3rem">Baixar</h2>
+      <p id="dlTitle" style="color:var(--accent2);margin-bottom:1.5rem;font-size:0.9rem">—</p>
+      <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:600">Escolha a qualidade</p>
+      <div class="dl-options">
+        <div class="dl-option" onclick="startDl(this,'4K Ultra HD')">
+          <div><div class="dl-quality">4K Ultra HD</div><div class="dl-size">≈ 8.5 GB</div></div>
+          <span class="dl-icon">⬇</span>
+        </div>
+        <div class="dl-option" onclick="startDl(this,'1080p Full HD')">
+          <div><div class="dl-quality">1080p Full HD</div><div class="dl-size">≈ 3.2 GB</div></div>
+          <span class="dl-icon">⬇</span>
+        </div>
+        <div class="dl-option" onclick="startDl(this,'720p HD')">
+          <div><div class="dl-quality">720p HD</div><div class="dl-size">≈ 1.5 GB</div></div>
+          <span class="dl-icon">⬇</span>
+        </div>
+        <div class="dl-option" onclick="startDl(this,'480p SD')">
+          <div><div class="dl-quality">480p SD</div><div class="dl-size">≈ 700 MB</div></div>
+          <span class="dl-icon">⬇</span>
+        </div>
+      </div>
+      <p style="font-size:0.75rem;color:var(--muted);margin-top:1.2rem;text-align:center">🔒 Download disponível por 30 dias offline</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentTitle = '';
+  const bgClasses = ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12'];
+
+  function openModal(title, meta, desc, bgClass) {
+    currentTitle = title;
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalMeta').textContent = meta;
+    document.getElementById('modalDesc').textContent = desc;
+    document.getElementById('modalVideoBg').className = 'modal-video-bg ' + bgClass;
+    document.getElementById('mainModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal() {
+    document.getElementById('mainModal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function openDownload(title) {
+    document.getElementById('dlTitle').textContent = title;
+    document.getElementById('dlModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeDl() {
+    document.getElementById('dlModal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function startDl(el, quality) {
+    el.innerHTML = `<div><div class="dl-quality">${quality}</div><div class="dl-size" style="color:#2ecc71">✓ Na fila</div></div><span style="color:#2ecc71">✓</span>`;
+    el.style.borderColor = '#2ecc71';
+    el.style.background = 'rgba(46,204,113,0.08)';
+  }
+  function switchTab(btn, tabId) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+  }
+  function filterCat(btn, cat) {
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  // Nav link active on scroll + smooth scroll
+  document.querySelectorAll('.nav-links a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const id = a.getAttribute('href').slice(1);
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({behavior:'smooth'});
+    });
+  });
+
+  // Search enter
+  document.querySelector('.search-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const q = e.target.value.trim();
+      if (q) alert(`Buscando: "${q}"\n\n(Integre com sua API de conteúdo)`);
+    }
+  });
+  document.querySelector('.search-btn').addEventListener('click', () => {
+    const q = document.querySelector('.search-input').value.trim();
+    if (q) alert(`Buscando: "${q}"\n\n(Integre com sua API de conteúdo)`);
+  });
+</script>
+</body>
+</html>
